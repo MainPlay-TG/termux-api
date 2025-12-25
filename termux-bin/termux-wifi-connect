@@ -1,0 +1,41 @@
+#!/bin/env python3
+import subprocess
+import sys
+from argparse import ArgumentParser
+SECURITY_TYPES = ["open", "wpa2", "wpa3"]
+argp = ArgumentParser()
+argp.add_argument("--password", help="пароль от сети")
+argp.add_argument("--security", choices=SECURITY_TYPES, help="тип авторизации")
+argp.add_argument("ssid", help="название сети")
+
+
+def get_pwd(pwd: str | None):
+  if pwd is None:
+    from getpass import getpass
+    return getpass("Password: ").strip()
+  if pwd == "-":
+    return sys.stdin.read().strip()
+  return pwd
+
+
+if __name__ == "__main__":
+  args = argp.parse_args()
+  cmd = ["/data/data/com.termux/files/usr/libexec/termux-api", "WifiConnect"]
+
+  def add_param(key: str, value: str):
+    cmd.append("--es")
+    cmd.append(key)
+    cmd.append(value)
+  # Указать SSID
+  add_param("ssid", args.ssid)
+  # Указать тип безопасности
+  add_param("security", args.security)
+  # Указать пароль
+  if args.security == "open":
+    add_param("password", "")
+  else:
+    if args.password:
+      add_param("password", get_pwd(args.password))
+  # Выполнить команду
+  code = subprocess.call(cmd)
+  sys.exit(code)
