@@ -12,7 +12,6 @@ import android.os.Build;
 import android.text.format.Formatter;
 import android.text.TextUtils;
 import android.util.JsonWriter;
-import androidx.annotation.TargetApi;
 import com.termux.api.TermuxApiReceiver;
 import com.termux.api.util.ResultReturner;
 import com.termux.shared.logger.Logger;
@@ -243,15 +242,29 @@ public class WifiAPI {
     return manager.addNetwork(config);
   }
 
-  // Поддержка WPA3-SAE (только API 29+)
-  @TargetApi(Build.VERSION_CODES.Q)
   private static int addWPA3Network(WifiManager manager, String ssid, String pass) {
-    WifiConfiguration config = new WifiConfiguration();
-    config.SSID = "\"" + ssid + "\"";
-    config.preSharedKey = "\"" + pass + "\"";
-    config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
-    config.requirePmf = true; // Обязательно для WPA3
-    return manager.addNetwork(config);
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+      return -1; // WPA3 не поддерживается
+    }
+
+    try {
+      WifiConfiguration config = new WifiConfiguration();
+      config.SSID = "\"" + ssid + "\"";
+      config.preSharedKey = "\"" + pass + "\"";
+
+      // Получаем поле через reflection, так как requirePmf нет в старых SDK
+      java.lang.reflect.Field requirePmfField = WifiConfiguration.class.getDeclaredField("requirePmf");
+      requirePmfField.setAccessible(true);
+      requirePmfField.set(config, true);
+
+      // Устанавливаем KeyMgmt SAE (WPA3-Personal)
+      config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.SAE);
+
+      return manager.addNetwork(config);
+    } catch (Exception e) {
+      Logger.logError(LOG_TAG, "Failed to create WPA3 configuration", e);
+      return -1;
+    }
   }
 
 }
