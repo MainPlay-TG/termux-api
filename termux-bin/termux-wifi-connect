@@ -1,6 +1,6 @@
 #!/bin/env python3
-import subprocess
 import sys
+import subprocess
 from argparse import ArgumentParser
 SECURITY_TYPES = ["open", "wpa2", "wpa3"]
 argp = ArgumentParser()
