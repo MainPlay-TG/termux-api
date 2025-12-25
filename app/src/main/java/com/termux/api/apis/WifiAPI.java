@@ -262,7 +262,6 @@ public class WifiAPI {
 
       return manager.addNetwork(config);
     } catch (Exception e) {
-      Logger.logError(LOG_TAG, "Failed to create WPA3 configuration", e);
       return -1;
     }
   }
